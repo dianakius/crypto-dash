@@ -14,16 +14,30 @@ const CoinDetailsPage = () => {
     const fetchCoin = async () => {
       try {
         const res = await fetch(`${API_URL}/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch coin data");
+        
+        if (res.status === 429) {
+          throw new Error("Rate limit exceeded. Please wait a few minutes and try again.");
+        }
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch coin data (${res.status})`);
+        }
+        
         const data = await res.json();
         console.log(data);
         setCoin(data);
       } catch (err) {
-        setError(err.message);
+        console.error("Fetch error:", err);
+        if (err.name === "TypeError" && err.message.includes("fetch")) {
+          setError("Network error. Please check your connection or try again later.");
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
     };
+    
     fetchCoin();
   }, [id]);
 
@@ -38,7 +52,12 @@ const CoinDetailsPage = () => {
       </h1>
 
       {loading && <p>Loading...</p>}
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          <p>{error}</p>
+          <p>Try refreshing the page in a few minutes.</p>
+        </div>
+      )}
 
       {!loading && !error && coin && (
         <>
@@ -48,36 +67,57 @@ const CoinDetailsPage = () => {
             className="coin-details-image"
           />
 
-          <p>{coin.description.en.split(". ")[0] + "."}</p>
+          {coin.description?.en && (
+            <p>{coin.description.en.split(". ")[0] + "."}</p>
+          )}
 
           <div className="coin-details-info">
-            <h3>Rank: #{coin.market_cap_rank}</h3>
-            <h3>
-              Current Prices: $
-              {coin.market_data.current_price.usd.toLocaleString()}
-            </h3>
-            <h4>
-              Market Cap: ${coin.market_data.market_cap.usd.toLocaleString()}
-            </h4>
-            <h4>24h High: ${coin.market_data.high_24h.usd.toLocaleString()}</h4>
-            <h4>24h Low: ${coin.market_data.low_24h.usd.toLocaleString()}</h4>
-            <h4>
-              24h Price Change: ${coin.market_data.price_change_24h.toFixed(2)}{" "}
-              ({coin.market_data.price_change_percentage_24h.toFixed(2)}%)
-            </h4>
-            <h4>
-              Circulating Supply:{" "}
-              {coin.market_data.circulating_supply.toLocaleString()}
-            </h4>
+            {coin.market_cap_rank && <h3>Rank: #{coin.market_cap_rank}</h3>}
+            
+            {coin.market_data?.current_price?.usd && (
+              <h3>
+                Current Price: $
+                {coin.market_data.current_price.usd.toLocaleString()}
+              </h3>
+            )}
+            
+            {coin.market_data?.market_cap?.usd && (
+              <h4>
+                Market Cap: ${coin.market_data.market_cap.usd.toLocaleString()}
+              </h4>
+            )}
+            
+            {coin.market_data?.high_24h?.usd && (
+              <h4>24h High: ${coin.market_data.high_24h.usd.toLocaleString()}</h4>
+            )}
+            
+            {coin.market_data?.low_24h?.usd && (
+              <h4>24h Low: ${coin.market_data.low_24h.usd.toLocaleString()}</h4>
+            )}
+            
+            {coin.market_data?.price_change_24h && (
+              <h4>
+                24h Price Change: ${coin.market_data.price_change_24h.toFixed(2)}{" "}
+                ({coin.market_data.price_change_percentage_24h?.toFixed(2) || "0"}%)
+              </h4>
+            )}
+            
+            {coin.market_data?.circulating_supply && (
+              <h4>
+                Circulating Supply:{" "}
+                {coin.market_data.circulating_supply.toLocaleString()}
+              </h4>
+            )}
+            
             <h4>
               Total Supply:{" "}
-              {coin.market_data.total_supply?.toLocaleString() || "N/A"}
+              {coin.market_data?.total_supply?.toLocaleString() || "N/A"}
             </h4>
           </div>
         </>
       )}
 
-      {!loading && !error && !coin && <p>No data found! </p>}
+      {!loading && !error && !coin && <p>No data found!</p>}
     </div>
   );
 };
