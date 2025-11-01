@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import Spinner from "../components/Spinner.jsx";
 
 const API_URL = import.meta.env.VITE_COIN_API_URL;
 
@@ -14,22 +15,26 @@ const CoinDetailsPage = () => {
     const fetchCoin = async () => {
       try {
         const res = await fetch(`${API_URL}/${id}`);
-        
+
         if (res.status === 429) {
-          throw new Error("Rate limit exceeded. Please wait a few minutes and try again.");
+          throw new Error(
+            "Rate limit exceeded. Please wait a few minutes and try again."
+          );
         }
-        
+
         if (!res.ok) {
           throw new Error(`Failed to fetch coin data (${res.status})`);
         }
-        
+
         const data = await res.json();
         console.log(data);
         setCoin(data);
       } catch (err) {
         console.error("Fetch error:", err);
         if (err.name === "TypeError" && err.message.includes("fetch")) {
-          setError("Network error. Please check your connection or try again later.");
+          setError(
+            "Network error. Please check your connection or try again later."
+          );
         } else {
           setError(err.message);
         }
@@ -37,7 +42,7 @@ const CoinDetailsPage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchCoin();
   }, [id]);
 
@@ -51,7 +56,7 @@ const CoinDetailsPage = () => {
           : "Coin Details"}
       </h1>
 
-      {loading && <p>Loading...</p>}
+      {loading && <Spinner />}
       {error && (
         <div className="error">
           <p>{error}</p>
@@ -73,42 +78,47 @@ const CoinDetailsPage = () => {
 
           <div className="coin-details-info">
             {coin.market_cap_rank && <h3>Rank: #{coin.market_cap_rank}</h3>}
-            
+
             {coin.market_data?.current_price?.usd && (
               <h3>
                 Current Price: $
                 {coin.market_data.current_price.usd.toLocaleString()}
               </h3>
             )}
-            
+
             {coin.market_data?.market_cap?.usd && (
               <h4>
                 Market Cap: ${coin.market_data.market_cap.usd.toLocaleString()}
               </h4>
             )}
-            
+
             {coin.market_data?.high_24h?.usd && (
-              <h4>24h High: ${coin.market_data.high_24h.usd.toLocaleString()}</h4>
+              <h4>
+                24h High: ${coin.market_data.high_24h.usd.toLocaleString()}
+              </h4>
             )}
-            
+
             {coin.market_data?.low_24h?.usd && (
               <h4>24h Low: ${coin.market_data.low_24h.usd.toLocaleString()}</h4>
             )}
-            
+
             {coin.market_data?.price_change_24h && (
               <h4>
-                24h Price Change: ${coin.market_data.price_change_24h.toFixed(2)}{" "}
-                ({coin.market_data.price_change_percentage_24h?.toFixed(2) || "0"}%)
+                24h Price Change: $
+                {coin.market_data.price_change_24h.toFixed(2)} (
+                {coin.market_data.price_change_percentage_24h?.toFixed(2) ||
+                  "0"}
+                %)
               </h4>
             )}
-            
+
             {coin.market_data?.circulating_supply && (
               <h4>
                 Circulating Supply:{" "}
                 {coin.market_data.circulating_supply.toLocaleString()}
               </h4>
             )}
-            
+
             <h4>
               Total Supply:{" "}
               {coin.market_data?.total_supply?.toLocaleString() || "N/A"}
